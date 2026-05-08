@@ -1,50 +1,65 @@
-# Windows Deployment Services (WDS) trên Windows Server 2022
+# Windows Deployment Services (WDS) Implementation on Windows Server 2022
 
-![Windows Server](https://shields.io)
-![VMware](https://shields.io)
-![Status](https://shields.io)
+[![Windows Server](https://img.shields.io/badge/OS-Windows%20Server%202022-0078D4?style=flat-square&logo=windows-server&logoColor=white)](https://www.microsoft.com/en-us/windows-server)
+[![VMware](https://img.shields.io/badge/Platform-VMware%20Workstation-607078?style=flat-square&logo=vmware&logoColor=white)](https://www.vmware.com/)
+[![Status](https://img.shields.io/badge/Status-Completed-success?style=flat-square)](https://github.com/)
 
-Đồ án cuối kỳ môn **Quản trị hệ thống mạng** - Khoa Công nghệ thông tin, Trường Đại học Tôn Đức Thắng (TDTU).
+> **Đồ án cuối kỳ:** Quản trị hệ thống mạng
+> **Đơn vị:** Khoa Công nghệ thông tin - Trường Đại học Tôn Đức Thắng (TDTU)
 
 ## 📝 Giới thiệu
-Dự án tập trung vào việc triển khai và cấu hình **Windows Deployment Services (WDS)** để tự động hóa quá trình cài đặt hệ điều hành Windows qua mạng LAN. Giải pháp này giúp quản trị viên không cần dùng USB/DVD vật lý, tiết kiệm thời gian và giảm thiểu sai sót khi triển khai số lượng lớn máy trạm.
+Dự án tập trung triển khai giải pháp **Windows Deployment Services (WDS)** nhằm tự động hóa quy trình phân phối hệ điều hành Windows qua môi trường mạng LAN. Giải pháp này giúp quản trị viên tối ưu hóa hiệu suất, loại bỏ sự phụ thuộc vào thiết bị lưu trữ vật lý (USB/DVD) và đảm bảo tính đồng nhất cho hạ tầng máy trạm số lượng lớn.
+
+
 
 ## 🛠 Môi trường triển khai
-*   **Phần mềm ảo hóa:** VMware® Workstation 17 Pro.
-*   **Hệ điều hành máy chủ:** Windows Server 2022 (Domain Controller).
-*   **Hệ điều hành triển khai:** Windows 10 Pro.
-*   **Dịch vụ đi kèm:** 
-    * Active Directory Domain Services (AD DS)
-    * Domain Name System (DNS)
-    * Dynamic Host Configuration Protocol (DHCP)
+
+| Thành phần | Chi tiết cấu hình |
+| :--- | :--- |
+| **Phần mềm ảo hóa** | VMware® Workstation 17 Pro |
+| **Server OS** | Windows Server 2022 (Standard Edition) |
+| **Client OS** | Windows 10 Pro (64-bit) |
+| **Network Roles** | AD DS, DNS, DHCP, WDS |
+| **Storage** | NTFS Partition (Dedicated for Images) |
 
 ## 🚀 Các tính năng chính
-- [x] **PXE Boot:** Khởi động máy khách từ card mạng qua giao thức PXE.
-- [x] **Image Management:** Quản lý tập trung Boot Images và Install Images (.wim).
-- [x] **Automation:** Hỗ trợ cài đặt tự động và tự động join domain sau khi cài đặt.
-- [x] **Dual Configuration:** Triển khai qua cả giao diện đồ họa (GUI) và dòng lệnh (PowerShell).
+- [x] **PXE Boot Integration:** Khởi động và nhận diện máy khách qua card mạng (Preboot Execution Environment).
+- [x] **Centralized Image Management:** Quản lý tập trung các tệp tin `boot.wim` và `install.wim`.
+- [x] **Zero-Touch Deployment (Lite):** Hỗ trợ trả lời tự động và tự động gia nhập tên miền (Join Domain).
+- [x] **Hybrid Management:** Linh hoạt cấu hình thông qua GUI hoặc script tự động hóa PowerShell.
 
-## 📖 Tóm tắt quy trình thực hiện
-1.  **Cấu hình hạ tầng:** Thiết lập IP tĩnh, cài đặt AD DS, DNS và DHCP Server.
-2.  **Chuẩn bị lưu trữ:** Định dạng ổ đĩa NTFS để lưu trữ tệp image có dung lượng lớn (>4GB).
-3.  **Cấu hình WDS:**
-    *   Tích hợp WDS với Active Directory.
-    *   Thiết lập chế độ phản hồi PXE (Respond to all clients).
-    *   Thêm `boot.wim` và `install.wim` từ tệp ISO gốc của Windows.
-4.  **Triển khai:** 
-    *   Cấu hình DHCP Options (60, 66, 67).
-    *   Khởi động máy Client qua mạng, nhấn F12 để gửi Request ID.
-    *   Phê duyệt (Approve) thiết bị trên Server và tiến hành cài đặt.
+## 📖 Quy trình thực hiện tiêu chuẩn
 
-## 💻 Đoạn mã PowerShell tiêu biểu
-Để cài đặt nhanh vai trò WDS, nhóm đã sử dụng lệnh:
+### 1. Chuẩn bị hạ tầng (Infrastructure)
+* Thiết lập IP tĩnh (Static IP) cho Domain Controller.
+* Triển khai và cấu hình **AD DS, DNS, DHCP**.
+* Đảm bảo Scope DHCP hoạt động để cấp phát IP cho máy khách.
+
+### 2. Cấu hình WDS Role
+* **Initialize Server:** Chọn chế độ *Integrated with Active Directory*.
+* **PXE Response:** Thiết lập *Respond to all client computers (known and unknown)*.
+* **Image Selection:**
+    * **Boot Image:** Trích xuất từ bộ cài Windows (`\sources\boot.wim`).
+    * **Install Image:** Thêm các phiên bản Windows cụ thể từ tệp `install.wim`.
+
+### 3. Tối ưu hóa DHCP cho PXE
+Cấu hình các DHCP Options để định hướng Client tìm thấy WDS Server:
+* `Option 60`: PXEClient
+* `Option 66`: Host name of the boot server (IP của WDS Server)
+* `Option 67`: Boot file name (e.g., `boot\x64\pxeboot.com`)
+
+## 💻 Quản trị bằng PowerShell
+Sử dụng PowerShell giúp quá trình cài đặt nhanh chóng và chính xác hơn:
+
 ```powershell
-# Cài đặt vai trò WDS và công cụ quản lý
+# 1. Cài đặt vai trò WDS và các công cụ quản lý đi kèm
 Install-WindowsFeature -Name WDS -IncludeManagementTools
 
-# Kiểm tra trạng thái dịch vụ
-Get-WindowsFeature -Name WDS
-```
+# 2. Khởi tạo cấu hình WDS cơ bản
+WDSUTIL /Initialize-Server /RemInst:"D:\RemoteInstall"
+
+# 3. Kiểm tra trạng thái dịch vụ sau khi cấu hình
+Get-Service -Name WDSServer | Select-Object Name, Status, StartType
 
 ## ⚠️ Lưu ý kỹ thuật
 *   **Firewall:** Cần tắt tường lửa trên máy chủ hoặc mở các port liên quan để Client có thể kết nối.
