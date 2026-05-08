@@ -60,6 +60,7 @@ WDSUTIL /Initialize-Server /RemInst:"D:\RemoteInstall"
 
 # 3. Kiểm tra trạng thái dịch vụ sau khi cấu hình
 Get-Service -Name WDSServer | Select-Object Name, Status, StartType
+```
 
 ## ⚠️ Lưu ý kỹ thuật
 *   **Firewall:** Cần tắt tường lửa trên máy chủ hoặc mở các port liên quan để Client có thể kết nối.
